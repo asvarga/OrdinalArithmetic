@@ -1,112 +1,116 @@
-
 \import Logic
 \import Order.LinearOrder
 \import Prelude
 \open Nat
 
--- TODO: enforce well-formedness of Ord' (a !<< b)
--- TODO: arithmetic
--- TODO: order on datatype
--- TODO: prove termination of operations
--- TODO: parameterize Ordinal type over other monoids (not just Nat)
--- TODO: implement some type classes
--- TODO: specify and implement quasigroup typeclass
+{-------------------}
 
 \data Unit | unit
+
 \data Comp | LT | EQ | GT
+
 \func Pos => \Sigma (p : Nat) (1 <= p)
+
 \func psuc (n : Nat) : Pos => (suc n, suc<=suc zero<=_)
+
 \func pone : Pos => psuc 0
 
+{-------------------}
+
 -- Not necessarily well-formed
+
 \data Ord'
   | zero
-  | ord Ord' Pos Ord' -- ord a n b :=
+  | ord Ord' Pos Ord' -- ord a n b := ω^a * n + b
   \where {
     \data \infix 4 < Ord' Ord' \with
       | zero, ord _ _ _ => zero<_
       | ord a1 _ _, ord a2 _ _ => a1<a2 (a1 < a2)
       | ord a1 n1 _, ord a2 n2 _ => n1<n2 (a1 = a2) (suc n1.1 <= n2.1)
       | ord a1 n1 b1, ord a2 n2 b2 => b1<b2 (a1 = a2) (n1 = n2) (b1 < b2)
-    {-\data \infix 4 !<< Ord' Ord' \with
-      | ord a n b, zero => _!<<zero
-      | x, ord a _ _ => ord!<<ord (a < x)-}
-    {-\data wf Ord' \with
-      | zero => wf0
-      | ord a n b => a!<<b (wf a) (wf b) (a !<< b)-}
+
     \data wf Ord' \with
       | zero => wf0
-      | ord a n zero => wfa (wf a)
-      | ord a n (ord b _ _) => wfab (wf a) (wf b) (b < a)
+      | ord a n zero => wfa0 (wf a)
+      | ord a n (ord b m c) => wfab (wf a) (wf (ord b m c)) (b < a)
+
     \func size' (_ : Ord') : Nat \with
       | zero => 0
       | ord a n b => (size' a) + n.1 + (size' b)
+
     \use \coerce n2o' (n : Nat) : Ord' \with
       | 0 => zero
       | suc n => ord zero (psuc n) zero
+
     \func one' => n2o' 1
+
     \func w' => ord one' (psuc 0) zero
+
     \func suco' (_ : Ord') : Ord' \with
       | zero => one'
+      | ord zero n zero => n2o' (suc n.1)
+--      | ord (ord a n b) m zero => ord (ord a n b) m one'
       | ord a n b => ord a n (suco' b)
   }
 
 {-----------------}
 
--- A well-formed ordinal
+-- Ordinals in Cantor Normal Form
+
 \func Ord => \Sigma (x : Ord') (Ord'.wf x)
 
 \func size (x : Ord) : Nat => Ord'.size' x.1
+
 \func n2o (_ : Nat) : Ord \with
   | 0 => (zero, Ord'.wf0)
-  | suc n => (Ord'.n2o' (suc n), Ord'.wfa Ord'.wf0)
-
+  | suc n => (Ord'.n2o' (suc n), Ord'.wfa0 Ord'.wf0)
 
 \func one : Ord => n2o 1
-\func w : Ord => (ord one.1 pone zero, Ord'.wfa one.2)
 
--- use one.2
+\func w : Ord => (ord one.1 pone zero, Ord'.wfa0 one.2)
 
---\func w : Ord' => ord one (1, suc<=suc zero<=_) zero
-
-
-
-
-
-
-
-
-
-
-
-
-
---    \data \infix 4 <= Ord' Ord' \with
---      | zero, _ => zero<=_
---      | ord a1 _ _, ord a2 _ _ => a1<=a2 (a1 <= a2)
---      | ord a1 n1 _, ord a2 n2 _ => n1<=n2 (a1 = a2) (n1.1 Nat.<= n2.1)
---      | ord a1 n1 b1, ord a2 n2 b2 => b1<=b2 (a1 = a2) (n1 = n2) (b1 <= b2)
---    \data \infix 4 < Ord' Ord' \with
---      | x, y => suc<= (suco x <= y)
-
---\data Pos | pos (p : Nat) (1 Nat.<= p)
-
---\func compN (x : Nat) (y : Nat) : Comp => if (x Nat.<= y)
-
---\func comp (x : Ord') (y : Ord') : Comp \elim x, y
---  | zero, zero => EQ
---  | zero, ord a n b => LT
---  | ord a n b, zero => GT
---  | ord a1 n1 b1, ord a2 n2 b2 => \case a1 `comp` a2 \with {
---    | LT => LT
---    | GT => GT
---    | EQ => if (n1 = n2) EQ EQ
---  }
-
-
+\func suco (_ : Ord) : Ord \with
+  | (zero, _) => one
+  | (ord zero n zero, _) => n2o (suc n.1)
+  | (ord (ord a n b) m zero, Ord'.wfa0 wfa) =>
+    (ord (ord a n b) n one.1, Ord'.wfab wfa one.2 Ord'.zero<_)
+  | (ord a n (ord b m c), Ord'.wfab wfa wfbmc b<a) =>
+    \case suco (ord b m c, wfbmc) \with {
+      | (zero, _) => (ord a n zero, Ord'.wfa0 wfa)  -- FIXME: this can't happen though
+      | (ord b2 m2 c2, p) => (ord a n (ord b2 m2 c2), Ord'.wfab wfa p {?})
+    }
 
 --    \let
---    | ca => (comp a1 a2)
---    , (comp n1 n2), (comp b1 b2)
+--      | (ord b' n' c', _) => suco (ord b m c, wfb)
+--    \in (ord a n (ord b' n' c'))
+
+--    (ord a n (suco (ord b m c, wfb)).1, Ord'.wfab wfa wfb b<a)
+
+{-------------------}
+
+
+
+
+
+
+
+
+
+{-------------------}
+
+-- TODO: suco
+-- TODO: arithmetic
+-- TODO: encapsulate well-formedness into Ord without Ord'
+-- TODO: parameterize Ordinal type over other monoids (not just Nat)
+-- TODO: implement some type classes
+-- TODO: specify and implement quasigroup typeclass
+
+
+
+
+
+
+
+
 
 
