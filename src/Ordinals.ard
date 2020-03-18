@@ -1,0 +1,67 @@
+
+\import Logic
+\import Order.LinearOrder
+\import Prelude
+\open Nat
+
+-- TODO: arithmetic
+-- TODO: order on datatype
+-- TODO: prove termination of operations
+-- TODO: parameterize Ordinal type over other monoids (not just Nat)
+
+\data Unit | unit
+\data Comp | LT | EQ | GT
+\func Pos => \Sigma (p : Nat) (1 <= p)
+
+\data Ord
+  | zero
+  | ord Ord Pos Ord
+  \where {
+    \data \infix 4 <= (x y : Ord) \with
+      | zero, _ => zero<=_
+      | ord a1 _ _, ord a2 _ _ => a1<=a2 (a1 <= a2)
+      | ord a1 n1 _, ord a2 n2 _ => n1<=n2 (a1 = a2) (n1.1 Nat.<= n2.1)
+      | ord a1 n1 b1, ord a2 n2 b2 => b1<=b2 (a1 = a2) (n1 = n2) (b1 <= b2)
+    \func suc (x : Ord) : Ord \with
+      | zero => one
+      | ord a n b => ord a n (suc b)
+    \data \infix 4 < (x y : Ord) \elim x, y
+      | x, y => suc<= (suc x <= y)
+  }
+
+\func size (o : Ord) : Nat \with
+  | zero => 0
+  | ord a n b => (size a) + n.1 + (size b)
+
+\func n2o (n : Nat) : Ord \with
+  | 0 => zero
+  | suc m => ord zero (suc m, suc<=suc zero<=_) zero
+\func one : Ord => n2o 1
+\func w : Ord => ord one (1, suc<=suc zero<=_) zero
+
+
+
+
+
+
+--\data Pos | pos (p : Nat) (1 Nat.<= p)
+
+--\func compN (x : Nat) (y : Nat) : Comp => if (x Nat.<= y)
+
+--\func comp (x : Ord) (y : Ord) : Comp \elim x, y
+--  | zero, zero => EQ
+--  | zero, ord a n b => LT
+--  | ord a n b, zero => GT
+--  | ord a1 n1 b1, ord a2 n2 b2 => \case a1 `comp` a2 \with {
+--    | LT => LT
+--    | GT => GT
+--    | EQ => if (n1 = n2) EQ EQ
+--  }
+
+
+
+--    \let
+--    | ca => (comp a1 a2)
+--    , (comp n1 n2), (comp b1 b2)
+
+
