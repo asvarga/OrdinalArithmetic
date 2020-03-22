@@ -1,5 +1,6 @@
 \import Logic
 \import Order.LinearOrder
+\import Paths
 \import Prelude
 \open Nat
 
@@ -14,6 +15,8 @@
 \func psuc (n : Nat) : Pos => (suc n, suc<=suc zero<=_)
 
 \func pone : Pos => psuc 0
+
+\func id {A : \Type} (a : A) : A => a
 
 {-------------------}
 
@@ -46,45 +49,68 @@
 
     \func w' => ord one' (psuc 0) zero
 
-    \func suco' (_ : Ord') : Ord' \with
+    \func osuc' (_ : Ord') : Ord' \with
       | zero => one'
       | ord zero n zero => n2o' (suc n.1)
 --      | ord (ord a n b) m zero => ord (ord a n b) m one'
-      | ord a n b => ord a n (suco' b)
+      | ord a n b => ord a n (osuc' b)
   }
+
+\open Ord'
 
 {-----------------}
 
 -- Ordinals in Cantor Normal Form
 
-\func Ord => \Sigma (x : Ord') (Ord'.wf x)
+\func Ord => \Sigma (x : Ord') (wf x)
 
-\func size (x : Ord) : Nat => Ord'.size' x.1
+\func size (x : Ord) : Nat => size' x.1
 
 \func n2o (_ : Nat) : Ord \with
-  | 0 => (zero, Ord'.wf0)
-  | suc n => (Ord'.n2o' (suc n), Ord'.wfa0 Ord'.wf0)
+  | 0 => (zero, wf0)
+  | suc n => (n2o' (suc n), wfa0 wf0)
 
 \func one : Ord => n2o 1
 
-\func w : Ord => (ord one.1 pone zero, Ord'.wfa0 one.2)
+\func w : Ord => (ord one.1 pone zero, wfa0 one.2)
 
-\func suco (_ : Ord) : Ord \with
-  | (zero, _) => one
-  | (ord zero n zero, _) => n2o (suc n.1)
-  | (ord (ord a n b) m zero, Ord'.wfa0 wfa) =>
-    (ord (ord a n b) n one.1, Ord'.wfab wfa one.2 Ord'.zero<_)
-  | (ord a n (ord b m c), Ord'.wfab wfa wfbmc b<a) =>
-    \case suco (ord b m c, wfbmc) \with {
-      | (zero, _) => (ord a n zero, Ord'.wfa0 wfa)  -- FIXME: this can't happen though
-      | (ord b2 m2 c2, p) => (ord a n (ord b2 m2 c2), Ord'.wfab wfa p {?})
-    }
+\func zero!=osuc' {x : Ord'} (p : zero = osuc' x) : Empty \elim x
+  | zero => transport T p unit
+  | ord zero _ zero => transport T p unit
+  | ord zero _ (ord _ _ _) => transport T p unit
+  | ord (ord _ _ _) _ zero => transport T p unit
+  | ord (ord _ _ _) _ (ord _ _ _) => transport T p unit
+  \where {
+    \func T (n : Ord') : \Type \with { | zero => Unit | _ => Empty }
+  }
+
+\func osuc'!<zero {x : Ord'} (p : osuc' x < zero) : Empty \elim x
+  | zero => {?}
+  | ord o p o1 => {?}
+
+\func wfosuc' (x : Ord') (p : wf x) : (wf (osuc' x)) \with
+  | zero, _ => one.2
+  | ord zero n zero, _ => wfa0 wf0
+  | ord zero n (ord a m b), wfab wfz wfamb a<zero => {?}
+  | ord (ord a n b) m zero, q => wfab {?} {?} {?}
+  | ord (ord _ _ _) _ (ord _ _ _), _ => {?}
+
+--\func osuc (_ : Ord) : Ord \with
+--  | (zero, _) => one
+--  | (ord zero n zero, _) => n2o (suc n.1)
+--  | (ord (ord a n b) m zero, wfa0 wfa) =>
+--    (ord (ord a n b) n one.1, wfab wfa one.2 zero<_)
+--  | (ord a n (ord b m c), wfab wfa wfbmc b<a) =>
+--    \case osuc (ord b m c, wfbmc) \with {
+--      | (zero, _) => (ord a n zero, wfa0 wfa)  -- FIXME: this can't happen though
+--      | (ord b2 m2 c2, p) => (ord a n (ord b2 m2 c2), wfab wfa p {?})
+--    }
 
 --    \let
---      | (ord b' n' c', _) => suco (ord b m c, wfb)
+--      | (ord b' n' c', _) => osuc (ord b m c, wfb)
 --    \in (ord a n (ord b' n' c'))
 
---    (ord a n (suco (ord b m c, wfb)).1, Ord'.wfab wfa wfb b<a)
+--    (ord a n (osuc (ord b m c, wfb)).1, wfab wfa wfb b<a)
 
 {-------------------}
 
@@ -98,7 +124,7 @@
 
 {-------------------}
 
--- TODO: suco
+-- TODO: osuc
 -- TODO: arithmetic
 -- TODO: encapsulate well-formedness into Ord without Ord'
 -- TODO: parameterize Ordinal type over other monoids (not just Nat)
