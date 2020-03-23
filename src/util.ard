@@ -1,0 +1,13 @@
+
+
+\data Unit | unit
+
+\data Comp | LT | EQ | GT
+
+{-------------------}
+
+\func \infixr 0 $ {A B : \Type} (f : A -> B) (x : A) : B => f x
+
+\func id {A : \Type} (a : A) : A => a
+
+\func const {A B : \Type} (a : A) (b : B) => a

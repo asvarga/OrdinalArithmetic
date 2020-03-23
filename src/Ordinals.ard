@@ -1,3 +1,4 @@
+\import util
 \import Logic
 \import Order.LinearOrder
 \import Paths
@@ -6,17 +7,13 @@
 
 {-------------------}
 
-\data Unit | unit
-
-\data Comp | LT | EQ | GT
+-- Positive Nats
 
 \func Pos => \Sigma (p : Nat) (1 <= p)
 
 \func psuc (n : Nat) : Pos => (suc n, suc<=suc zero<=_)
 
-\func pone : Pos => psuc 0
-
-\func id {A : \Type} (a : A) : A => a
+\func +1 => psuc 0
 
 {-------------------}
 
@@ -32,79 +29,89 @@
       | ord a1 n1 _, ord a2 n2 _ => n1<n2 (a1 = a2) (suc n1.1 <= n2.1)
       | ord a1 n1 b1, ord a2 n2 b2 => b1<b2 (a1 = a2) (n1 = n2) (b1 < b2)
 
-    \data wf Ord' \with
-      | zero => wf0
-      | ord a n zero => wf1 (wf a)
-      | ord a n (ord b m c) => wf2 (wf a) (wf (ord b m c)) (b < a)
+    \data nf Ord' \with
+      | zero => nf0
+      | ord a n zero => nf1 (nf a)
+      | ord a n (ord b m c) => nf2 (nf a) (nf (ord b m c)) (b < a)
 
     \func size' (_ : Ord') : Nat \with
       | zero => 0
-      | ord a n b => (size' a) + n.1 + (size' b)
+      | ord a n b => size' a + n.1 + size' b
 
-    \use \coerce n2o' (n : Nat) : Ord' \with
+    \use \coerce n2o' (_ : Nat) : Ord' \with
       | 0 => zero
       | suc n => ord zero (psuc n) zero
 
-    \func one' => n2o' 1
+    \func one' => 1
 
-    \func w' => ord one' (psuc 0) zero
+    \func w' => ord 1 +1 0
 
     \func osuc' (_ : Ord') : Ord' \with
-      | zero => one'
-      | ord zero n b => n2o' (suc n.1)
-      --      | ord (ord a n b) m zero => ord (ord a n b) m one'
-      | ord a n b => ord a n (osuc' b)
+      | zero => 1
+      | ord zero n b => n2o' $ suc n.1
+      | ord a n b => ord a n $ osuc' b
+
+    \func zero!=osuc' {x : Ord'} (p : zero = osuc' x) : Empty \elim x
+      | zero => transport T p unit
+      | ord zero _ zero => transport T p unit
+      | ord zero _ (ord _ _ _) => transport T p unit
+      | ord (ord _ _ _) _ zero => transport T p unit
+      | ord (ord _ _ _) _ (ord _ _ _) => transport T p unit
+      \where {
+        \func T (n : Ord') : \Type \with {
+          | zero => Unit | _ => Empty
+        }
+      }
+
+    \func _!<zero {x : Ord'} (p : x < zero) : Empty \elim x, p
+
+    \func nfosuc {x : Ord'} (p : nf x) : nf $ osuc' x \elim x, p
+      | zero, _ => nf1 nf0
+      | ord zero _ zero, _ => nf1 nf0
+      | ord zero _ (ord _ _ _), nf2 _ _ a<zero => absurd $ _!<zero a<zero
+      | ord (ord _ _ _) _ zero, nf1 nfa => nf2 nfa (nf1 nf0) zero<_
+      | ord (ord _ _ _) _ (ord zero _ _), nf2 nfa _ _ => nf2 nfa (nf1 nf0) zero<_
+      | ord (ord _ _ _) _ (ord (ord _ _ _) _ _), nf2 nfa nfb ba<a => nf2 nfa (nfosuc nfb) ba<a
   }
 
 \open Ord'
 
-{-----------------}
+{-------------------}
 
 -- Ordinals in Cantor Normal Form
 
-\func Ord => \Sigma (x : Ord') (wf x)
-
-\func size (x : Ord) : Nat => size' x.1
-
-\func n2o (_ : Nat) : Ord \with
-  | 0 => (zero, wf0)
-  | suc n => (n2o' (suc n), wf1 wf0)
-
-\func one : Ord => n2o 1
-
-\func w : Ord => (ord one.1 pone zero, wf1 one.2)
-
-\func zero!=osuc' {x : Ord'} (p : zero = osuc' x) : Empty \elim x
-  | zero => transport T p unit
-  | ord zero _ zero => transport T p unit
-  | ord zero _ (ord _ _ _) => transport T p unit
-  | ord (ord _ _ _) _ zero => transport T p unit
-  | ord (ord _ _ _) _ (ord _ _ _) => transport T p unit
+\record Ord
+  | val : Ord'
+  | nfval : nf val
   \where {
-    \func T (n : Ord') : \Type \with {
-      | zero => Unit | _ => Empty
-    }
+    \func size (x : Ord) : Nat => size' x.val
+
+    \use \coerce n2o (n : Nat) : Ord \with
+      | 0 => \new Ord 0 nf0
+      | suc n => \new Ord (n2o' $ suc n) (nf1 nf0)
+
+    \func one : Ord => 1
+
+    \func w : Ord \cowith
+      | val => ord 1 +1 0
+      | nfval => nf1 one.nfval
+
+    \func osuc (x : Ord) : Ord \cowith
+      | val => osuc' x.val
+      | nfval => nfosuc x.nfval
   }
 
-\func _!<zero {x : Ord'} (p : x < zero) : Empty \elim x, p
-
-\func wfosuc (x : Ord') (p : wf x) : (wf (osuc' x)) \with
-  | zero, _ => one.2
-  | ord zero _ zero, _ => wf1 wf0
-  | ord zero _ (ord _ _ _), wf2 _ _ a<zero => absurd (_!<zero a<zero)
-  | ord (ord _ _ _) _ zero, wf1 wfa => wf2 wfa (wf1 wf0) zero<_
-  | ord (ord _ _ _) _ (ord zero _ _), wf2 wfa _ _ => wf2 wfa (wf1 wf0) zero<_
-  | ord (ord _ _ _) _ (ord (ord c o d) q e), wf2 wfa wfb cod<a => wf2 wfa (wfosuc (ord (ord c o d) q e) wfb) cod<a
-
-\func osuc (x : Ord) : Ord => (osuc' x.1, wfosuc x.1 x.2)
+\open Ord
 
 {-------------------}
 
--- TODO: arithmetic
+-- TODO: specify ploop (partial loop) typeclass
+-- TODO: +
+-- TODO: implement monoid (prove associativity)
+-- TODO: left subtraction (total)
+-- TODO: right subtraction (partial; need failure object)
+-- TODO: implement ploop
 -- TODO: encapsulate well-formedness into Ord without Ord'
--- TODO: parameterize Ordinal type over other monoids (not just Nat)
--- TODO: implement some type classes
--- TODO: specify and implement quasigroup typeclass
 
 
 
