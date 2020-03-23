@@ -1,3 +1,4 @@
+\import Arith.Nat
 \import util
 \import Logic
 \import Order.LinearOrder
@@ -14,6 +15,10 @@
 \func psuc (n : Nat) : Pos => (suc n, suc<=suc zero<=_)
 
 \func +1 => psuc 0
+
+\func \infixl 6 p+ (x y : Pos) : Pos => \let
+  | sum =>  x.1 + y.1
+\in (sum, NatLE.<=-transitive 1 y.1 sum y.2 (<=_0_+-left {y.1} x.1))
 
 {-------------------}
 
@@ -37,7 +42,7 @@
       | 0 => zero
       | suc n => ord zero (psuc n) zero
 
-    \func _!<zero {x : Ord'} (p : x < zero) : Empty \elim x, p
+    \lemma _!<zero {x : Ord'} (p : x < zero) : Empty \elim x, p
   }
 
 \open Ord'
@@ -84,12 +89,36 @@
           | ord (ord _ _ _) _ (ord zero _ _), nf2 nfa _ _ => nf2 nfa (nf1 nf0) zero<_
           | ord (ord _ _ _) _ (ord (ord _ _ _) _ _), nf2 nfa nfb ba<a => nf2 nfa (nfosuc nfb) ba<a
       }
+
+    \func \infix 4 comp (_ _ : Ord') : Comp \with
+      | zero, zero => EQ
+      | zero, _ => LT
+      | _, zero => GT
+      | ord a1 n1 b1, ord a2 n2 b2 => \case a1 comp a2 \with {
+        | EQ => \case n1.1 compn n2.1 \with {
+          | EQ => b1 comp b2
+          | _T => _T
+        }
+        | _T => _T
+      }
+
+    \func \infixl 6 +' (_ _ : Ord') : Ord' \with
+      | zero, y => y
+      | x, zero => x
+      | ord a1 n1 b1, ord a2 n2 b2 => \case a1 comp a2 \with {
+        | LT => ord a2 n2 b2
+        | EQ => ord a1 (n1 p+ n2) (b1 +' b2)
+        | GT => ord a1 n1 (b1 +' ord a2 n2 b2)
+      }
+
   }
 
 \open Ord
 
 {-------------------}
 
+-- TODO: decide nf: see Set.ard
+-- TODO: decide equality
 -- TODO: specify ploop (partial loop) typeclass
 -- TODO: +
 -- TODO: implement monoid (prove associativity)

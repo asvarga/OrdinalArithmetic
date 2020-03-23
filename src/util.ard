@@ -11,3 +11,10 @@
 \func id {A : \Type} (a : A) : A => a
 
 \func const {A B : \Type} (a : A) (b : B) => a
+
+\func \infix 4 compn (x y : Nat) : Comp \with {
+  | 0, 0 => EQ
+  | 0, suc n => LT
+  | suc n, 0 => GT
+  | suc n1, suc n2 => n1 compn n2
+}
