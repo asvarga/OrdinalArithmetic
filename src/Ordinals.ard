@@ -34,8 +34,8 @@
 
     \data wf Ord' \with
       | zero => wf0
-      | ord a n zero => wfa0 (wf a)
-      | ord a n (ord b m c) => wfab (wf a) (wf (ord b m c)) (b < a)
+      | ord a n zero => wf1 (wf a)
+      | ord a n (ord b m c) => wf2 (wf a) (wf (ord b m c)) (b < a)
 
     \func size' (_ : Ord') : Nat \with
       | zero => 0
@@ -51,8 +51,8 @@
 
     \func osuc' (_ : Ord') : Ord' \with
       | zero => one'
-      | ord zero n zero => n2o' (suc n.1)
---      | ord (ord a n b) m zero => ord (ord a n b) m one'
+      | ord zero n b => n2o' (suc n.1)
+      --      | ord (ord a n b) m zero => ord (ord a n b) m one'
       | ord a n b => ord a n (osuc' b)
   }
 
@@ -68,11 +68,11 @@
 
 \func n2o (_ : Nat) : Ord \with
   | 0 => (zero, wf0)
-  | suc n => (n2o' (suc n), wfa0 wf0)
+  | suc n => (n2o' (suc n), wf1 wf0)
 
 \func one : Ord => n2o 1
 
-\func w : Ord => (ord one.1 pone zero, wfa0 one.2)
+\func w : Ord => (ord one.1 pone zero, wf1 one.2)
 
 \func zero!=osuc' {x : Ord'} (p : zero = osuc' x) : Empty \elim x
   | zero => transport T p unit
@@ -81,60 +81,27 @@
   | ord (ord _ _ _) _ zero => transport T p unit
   | ord (ord _ _ _) _ (ord _ _ _) => transport T p unit
   \where {
-    \func T (n : Ord') : \Type \with { | zero => Unit | _ => Empty }
+    \func T (n : Ord') : \Type \with {
+      | zero => Unit | _ => Empty
+    }
   }
 
 \func _!<zero {x : Ord'} (p : x < zero) : Empty \elim x, p
 
-\func wfosuc' (x : Ord') (p : wf x) : (wf (osuc' x)) \with
+\func wfosuc (x : Ord') (p : wf x) : (wf (osuc' x)) \with
   | zero, _ => one.2
-  | ord zero n zero, _ => wfa0 wf0
-  | ord zero n (ord a m b), wfab _ _ a<zero => absurd (_!<zero a<zero)
-  | ord (ord a n b) m zero, wfa0 wfanb => wfab wfanb (wfa0 wf0) zero<_
---  | ord (ord a _ b) _ (ord c _ zero), wfab wfa_b wfc_z c<a_b =>
---    wfab wfa_b {?} {?}
---  | ord (ord a n b) m (ord a2 p (ord o p1 o1)), p2 => {?}
+  | ord zero n zero, _ => wf1 wf0
+  | ord zero n (ord a m b), wf2 _ _ a<zero => absurd (_!<zero a<zero)
+  | ord (ord a n b) m zero, wf1 wfanb => wf2 wfanb (wf1 wf0) zero<_
+  | ord (ord a m b) n (ord zero o d), wf2 wfamb wfcod c<amb => wf2 wfamb (wf1 wf0) zero<_
+  | ord (ord a m b) n (ord (ord c o d) q e), wf2 wfamb wfcodqe cod<amb =>
+    \let | rec => wfosuc (ord (ord c o d) q e) wfcodqe
+    \in wf2 wfamb rec cod<amb
 
-  | ord (ord a1 n1 b1) m (ord a2 n2 b2), wfab wfanb1 wfanb2 a2<anb1 =>
-    \let
-      | rec => wfosuc' (ord a2 n2 b2) wfanb2
-    \in wfab wfanb1 {?} {?}
-
--- TODO: need to show that osuc' (ord a n b) = osuc' (ord a m c), i.e. a is unchanged
---       maybe just do more cases?
-
-\func osuc (x : Ord) : Ord => (osuc' x.1, wfosuc' x.1 x.2)
-
---\func osuc (_ : Ord) : Ord \with
---  | (zero, _) => one
---  | (ord zero n zero, _) => n2o (suc n.1)
---  | (ord (ord a n b) m zero, wfa0 wfa) =>
---    (ord (ord a n b) n one.1, wfab wfa one.2 zero<_)
---  | (ord a n (ord b m c), wfab wfa wfbmc b<a) =>
---    \case osuc (ord b m c, wfbmc) \with {
---      | (zero, _) => (ord a n zero, wfa0 wfa)  -- FIXME: this can't happen though
---      | (ord b2 m2 c2, p) => (ord a n (ord b2 m2 c2), wfab wfa p {?})
---    }
-
---    \let
---      | (ord b' n' c', _) => osuc (ord b m c, wfb)
---    \in (ord a n (ord b' n' c'))
-
---    (ord a n (osuc (ord b m c, wfb)).1, wfab wfa wfb b<a)
+\func osuc (x : Ord) : Ord => (osuc' x.1, wfosuc x.1 x.2)
 
 {-------------------}
 
-
-
-
-
-
-
-
-
-{-------------------}
-
--- TODO: osuc
 -- TODO: arithmetic
 -- TODO: encapsulate well-formedness into Ord without Ord'
 -- TODO: parameterize Ordinal type over other monoids (not just Nat)
