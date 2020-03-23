@@ -90,13 +90,11 @@
 
 \func wfosuc (x : Ord') (p : wf x) : (wf (osuc' x)) \with
   | zero, _ => one.2
-  | ord zero n zero, _ => wf1 wf0
-  | ord zero n (ord a m b), wf2 _ _ a<zero => absurd (_!<zero a<zero)
-  | ord (ord a n b) m zero, wf1 wfanb => wf2 wfanb (wf1 wf0) zero<_
-  | ord (ord a m b) n (ord zero o d), wf2 wfamb wfcod c<amb => wf2 wfamb (wf1 wf0) zero<_
-  | ord (ord a m b) n (ord (ord c o d) q e), wf2 wfamb wfcodqe cod<amb =>
-    \let | rec => wfosuc (ord (ord c o d) q e) wfcodqe
-    \in wf2 wfamb rec cod<amb
+  | ord zero _ zero, _ => wf1 wf0
+  | ord zero _ (ord _ _ _), wf2 _ _ a<zero => absurd (_!<zero a<zero)
+  | ord (ord _ _ _) _ zero, wf1 wfa => wf2 wfa (wf1 wf0) zero<_
+  | ord (ord _ _ _) _ (ord zero _ _), wf2 wfa _ _ => wf2 wfa (wf1 wf0) zero<_
+  | ord (ord _ _ _) _ (ord (ord c o d) q e), wf2 wfa wfb cod<a => wf2 wfa (wfosuc (ord (ord c o d) q e) wfb) cod<a
 
 \func osuc (x : Ord) : Ord => (osuc' x.1, wfosuc x.1 x.2)
 
