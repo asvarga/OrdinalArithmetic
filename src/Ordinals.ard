@@ -29,11 +29,6 @@
       | ord a1 n1 _, ord a2 n2 _ => n1<n2 (a1 = a2) (suc n1.1 <= n2.1)
       | ord a1 n1 b1, ord a2 n2 b2 => b1<b2 (a1 = a2) (n1 = n2) (b1 < b2)
 
-    \data nf Ord' \with
-      | zero => nf0
-      | ord a n zero => nf1 (nf a)
-      | ord a n (ord b m c) => nf2 (nf a) (nf (ord b m c)) (b < a)
-
     \func size' (_ : Ord') : Nat \with
       | zero => 0
       | ord a n b => size' a + n.1 + size' b
@@ -42,36 +37,7 @@
       | 0 => zero
       | suc n => ord zero (psuc n) zero
 
-    \func one' => 1
-
-    \func w' => ord 1 +1 0
-
-    \func osuc' (_ : Ord') : Ord' \with
-      | zero => 1
-      | ord zero n b => n2o' $ suc n.1
-      | ord a n b => ord a n $ osuc' b
-
-    \func zero!=osuc' {x : Ord'} (p : zero = osuc' x) : Empty \elim x
-      | zero => transport T p unit
-      | ord zero _ zero => transport T p unit
-      | ord zero _ (ord _ _ _) => transport T p unit
-      | ord (ord _ _ _) _ zero => transport T p unit
-      | ord (ord _ _ _) _ (ord _ _ _) => transport T p unit
-      \where {
-        \func T (n : Ord') : \Type \with {
-          | zero => Unit | _ => Empty
-        }
-      }
-
     \func _!<zero {x : Ord'} (p : x < zero) : Empty \elim x, p
-
-    \func nfosuc {x : Ord'} (p : nf x) : nf $ osuc' x \elim x, p
-      | zero, _ => nf1 nf0
-      | ord zero _ zero, _ => nf1 nf0
-      | ord zero _ (ord _ _ _), nf2 _ _ a<zero => absurd $ _!<zero a<zero
-      | ord (ord _ _ _) _ zero, nf1 nfa => nf2 nfa (nf1 nf0) zero<_
-      | ord (ord _ _ _) _ (ord zero _ _), nf2 nfa _ _ => nf2 nfa (nf1 nf0) zero<_
-      | ord (ord _ _ _) _ (ord (ord _ _ _) _ _), nf2 nfa nfb ba<a => nf2 nfa (nfosuc nfb) ba<a
   }
 
 \open Ord'
@@ -84,11 +50,16 @@
   | val : Ord'
   | nfval : nf val
   \where {
+    \data nf Ord' \with
+      | zero => nf0
+      | ord a n zero => nf1 (nf a)
+      | ord a n (ord b m c) => nf2 (nf a) (nf (ord b m c)) (b < a)
+
     \func size (x : Ord) : Nat => size' x.val
 
     \use \coerce n2o (n : Nat) : Ord \with
       | 0 => \new Ord 0 nf0
-      | suc n => \new Ord (n2o' $ suc n) (nf1 nf0)
+      | suc n => \new Ord (suc n) (nf1 nf0)
 
     \func one : Ord => 1
 
@@ -99,6 +70,20 @@
     \func osuc (x : Ord) : Ord \cowith
       | val => osuc' x.val
       | nfval => nfosuc x.nfval
+      \where {
+        \func osuc' (_ : Ord') : Ord' \with
+          | zero => 1
+          | ord zero n b => n2o' $ suc n.1
+          | ord a n b => ord a n $ osuc' b
+
+        \func nfosuc {x : Ord'} (p : nf x) : nf $ osuc' x \elim x, p
+          | zero, _ => nf1 nf0
+          | ord zero _ zero, _ => nf1 nf0
+          | ord zero _ (ord _ _ _), nf2 _ _ a<zero => absurd $ _!<zero a<zero
+          | ord (ord _ _ _) _ zero, nf1 nfa => nf2 nfa (nf1 nf0) zero<_
+          | ord (ord _ _ _) _ (ord zero _ _), nf2 nfa _ _ => nf2 nfa (nf1 nf0) zero<_
+          | ord (ord _ _ _) _ (ord (ord _ _ _) _ _), nf2 nfa nfb ba<a => nf2 nfa (nfosuc nfb) ba<a
+      }
   }
 
 \open Ord
