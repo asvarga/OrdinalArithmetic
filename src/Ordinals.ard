@@ -18,7 +18,7 @@
 
 \func \infixl 6 p+ (x y : Pos) : Pos => \let
   | sum =>  x.1 + y.1
-\in (sum, NatLE.<=-transitive 1 y.1 sum y.2 (<=_0_+-left {y.1} x.1))
+                                        \in (sum, NatLE.<=-transitive 1 y.1 sum y.2 (<=_0_+-left {y.1} x.1))
 
 {-------------------}
 
@@ -102,15 +102,39 @@
         | _T => _T
       }
 
-    \func \infixl 6 +' (_ _ : Ord') : Ord' \with
-      | zero, y => y
-      | x, zero => x
-      | ord a1 n1 b1, ord a2 n2 b2 => \case a1 comp a2 \with {
-        | LT => ord a2 n2 b2
-        | EQ => ord a1 (n1 p+ n2) (b1 +' b2)
-        | GT => ord a1 n1 (b1 +' ord a2 n2 b2)
-      }
+    \func \infixl 6 + (x y : Ord) : Ord \cowith
+      | val => x.val +' y.val
+      | nfval => nf+ x.nfval y.nfval
+      \where {
+        \func \infixl 6 +' (_ _ : Ord') : Ord' \with
+          | zero, y => y
+          | x, zero => x
+          | ord a1 n1 b1, ord a2 n2 b2 => \case a1 comp a2 \with {
+            | LT => ord a2 n2 b2
+            | EQ => ord a1 (n1 p+ n2) (b1 +' b2)
+            | GT => ord a1 n1 (b1 +' ord a2 n2 b2)
+          }
 
+        \func nf+ {x y : Ord'} (p : nf x) (q : nf y) : nf $ x +' y \elim x, y, p, q {
+          | zero, zero, nf0, nf0 => nf0
+          | zero, ord _ _ _, nf0, q => q
+          | ord _ _ _, zero, p, nf0 => p
+
+          | ord zero n1 zero, ord zero n2 zero, p, q => nf1 nf0
+          | ord zero n1 (ord _ _ _), _, nf2 _ _ a<zero, _ => absurd $ _!<zero a<zero
+          | _, ord zero n2 (ord _ _ _), _, nf2 _ _ a<zero => absurd $ _!<zero a<zero
+
+          | ord (ord a1 n1 b1) m1 zero, ord (ord a2 n2 b2) m2 zero, nf1 nfx, nf1 nfy => {?}
+
+          | ord a1 n1 b1, ord a2 n2 b2, p, q => {?}
+
+          -- TODO:
+          -- x comp y = LT -> x < y
+          -- x comp y = GT -> y < x
+          -- x comp y = EQ -> x = y
+          -- try more cases
+        }
+      }
   }
 
 \open Ord
