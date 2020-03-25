@@ -2,7 +2,7 @@
 
 \data Unit | unit
 
-\data Comp | LT | EQ | GT
+\data Ordering | LT | EQ | GT
 
 {-------------------}
 
@@ -12,7 +12,7 @@
 
 \func const {A B : \Type} (a : A) (b : B) => a
 
-\func \infix 4 compn (x y : Nat) : Comp \with {
+\func \infix 4 compn (x y : Nat) : Ordering \with {
   | 0, 0 => EQ
   | 0, suc n => LT
   | suc n, 0 => GT

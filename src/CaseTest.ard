@@ -3,44 +3,80 @@
 \import util
 \open Nat
 
-\data Comp | LT | EQ | GT
+\data Ordering | LT | EQ | GT
 
-\func \infix 4 compn (x y : Nat) : Comp \with {
+\func \infix 4 compn (x y : Nat) : Ordering
   | 0, 0 => EQ
   | 0, suc n => LT
   | suc n, 0 => GT
   | suc n1, suc n2 => n1 compn n2
-}
 
 \record NatPair
   | fst : Nat
   | snd : Nat
 
-\data test (pair : NatPair)
-  | t (pair.fst <= pair.snd)
+\func swap (pair : NatPair) : NatPair \cowith
+  | fst => pair.snd
+  | snd => pair.fst
+
+\data Test (pair : NatPair)
+  | test (pair.fst <= pair.snd)
 
 \func f (pair : NatPair) : NatPair => \case pair.fst compn pair.snd \with {
   | LT => pair
   | EQ => pair
-  | GT => \new NatPair pair.snd pair.fst
+  | GT => swap pair
 }
 
-\func testfpair (pair : NatPair) : test (f pair) => \case pair.fst compn pair.snd \with {
-  | LT =>
-    \let
-      | fpair=pair : f pair = pair => {?}
-      | testpair : test pair => {?}
-    \in transport test (inv fpair=pair) testpair
-  | EQ => {?}
-  | GT => {?}
-} \where {
-  \func LT-><= {x y : Nat} (p : x compn y = LT) : x <= y \with
-    | {0}, _ => zero<=_
-    | {suc n}, {0}, p => absurd (transport T p unit)
-    | {suc n}, {suc n1}, p => suc<=suc (LT-><= p)
+\func testfpair (pair : NatPair) : Test (f pair) =>
+  \let
+    | S : Ordering -> NatPair => (\lam c => \case c \with {
+      | LT => pair
+      | EQ => pair
+      | GT => swap pair
+    })
+  \in \case pair.fst compn pair.snd \as comp,
+        idp : pair.fst compn pair.snd = comp \with {
+    | LT, p =>
+      \let
+        | fpair=pair : f pair = pair => pmap S p
+        | testpair : Test pair => test (LT-><= p)
+      \in transport Test (inv fpair=pair) testpair
+    | EQ, p =>
+      \let
+        | fpair=pair : f pair = pair => pmap S p
+        | testpair : Test pair => test (EQ-><= p)
+      \in transport Test (inv fpair=pair) testpair
+    | GT, p =>
+      \let
+        | switch : NatPair => \new NatPair pair.snd pair.fst
+        | fpair=switch : f pair = switch => pmap S p
+        | testpair : Test switch => test (GT->swap<= p)
+      \in transport Test (inv fpair=switch) testpair
+  } \where {
+    \func LT-><= {x y : Nat} (p : x compn y = LT) : x <= y \with
+      | {0}, {_}, _ => zero<=_
+      | {suc n}, {0}, p => absurd (transport T p unit)
+      | {suc n}, {suc n1}, p => suc<=suc (LT-><= p)
 
-  \func T (c : Comp) : \Type \with
-    | LT => Empty
-    | EQ => Empty
-    | GT => Unit
-}
+    \func EQ-><= {x y : Nat} (p : x compn y = EQ) : x <= y \with
+      | {0}, {_}, _ => zero<=_
+      | {suc n}, {0}, p => absurd (transport T p unit)
+      | {suc n}, {suc n1}, p => suc<=suc (EQ-><= p)
+
+    \func GT->swap<= {x y : Nat} (p : x compn y = GT) : y <= x \with
+      | {_}, {0}, p => zero<=_
+      | {0}, {suc n}, p => absurd (transport T (inv p) unit)
+      | {suc n}, {suc n1}, p => suc<=suc (GT->swap<= p)
+
+    \func T (o : Ordering) : \Type \with
+          | LT => Empty
+          | EQ => Empty
+          | GT => Unit
+
+  }
+
+\func pair42 => \new NatPair 4 2
+
+\func q : Test (f pair42) => testfpair pair42
+
