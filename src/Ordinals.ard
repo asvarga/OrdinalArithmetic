@@ -116,24 +116,60 @@
             | GT => ord a1 n1 (b1 +' ord a2 n2 b2)
           }
 
-        \func nf+ {x y : Ord'} (p : nf x) (q : nf y) : nf $ x +' y \elim x, y, p, q {
-          | zero, zero, nf0, nf0 => nf0
-          | zero, ord _ _ _, nf0, q => q
-          | ord _ _ _, zero, p, nf0 => p
+        \func nf+ {x : Ord'} (nfx : nf x) {y : Ord'} (nfy : nf y) : nf $ x +' y \elim x, nfx, y, nfy {
 
-          | ord zero n1 zero, ord zero n2 zero, p, q => nf1 nf0
-          | ord zero n1 (ord _ _ _), _, nf2 _ _ a<zero, _ => absurd $ _!<zero a<zero
-          | _, ord zero n2 (ord _ _ _), _, nf2 _ _ a<zero => absurd $ _!<zero a<zero
+          | zero, nf0, zero, nf0 => nf0
+          | zero, nf0, ord ya yn yb, nfy => nfy
+          | ord xa xn xb, nfx, zero, nf0 => nfx
+          | ord xa xn xb, nfx, ord ya yn yb, nfy =>
+            \let
+              | S : Ordering -> Ord' => (\lam o => \case o \with {
+                | GT => ord xa xn (xb +' ord ya yn yb)
+                | LT => ord ya yn yb
+                | EQ => ord xa (xn p+ yn) (xb +' yb)
+              })
+              | sum : Ord' => S $ xa comp ya
+            \in \case xa comp ya \as ordering, idp : ordering = xa comp ya \with {
+              | LT, r =>
+                \let nfsum : nf $ ord ya yn yb => nfy
+                \in transport nf (pmap S r) nfsum
+              | EQ, r =>
+                \let nfsum : nf $ ord xa (xn p+ yn) (xb +' yb) => {?}
+                \in transport nf (pmap S r) nfsum
+              | GT, r =>
+                \let nfsum : nf $ ord xa xn (xb +' ord ya yn yb) => {?}
+                \in transport nf (pmap S r) nfsum
+            }
 
-          | ord (ord a1 n1 b1) m1 zero, ord (ord a2 n2 b2) m2 zero, nf1 nfx, nf1 nfy => {?}
 
-          | ord a1 n1 b1, ord a2 n2 b2, p, q => {?}
+          {-| zero, nf0, zero, nf0 => nf0
+          | zero, nf0, ord ya yn yb, nfy => nfy
+          | ord xa xn xb, nfx, zero, nf0 => nfx
 
-          -- TODO:
-          -- x comp y = LT -> x < y
-          -- x comp y = GT -> y < x
-          -- x comp y = EQ -> x = y
-          -- try more cases
+          | ord zero xn (ord xba xbn xbb), nf2 _ _ a<zero, y, nfy => absurd $ _!<zero a<zero
+          | x, nfx, ord zero yn (ord yba ybn ybb), nf2 _ _ a<zero => absurd $ _!<zero a<zero
+
+          | ord zero xn zero, nf1 nf0,
+            ord zero yn zero, nf1 nf0 => nf1 nf0
+          | ord zero xn zero, nf1 nf0,
+            ord (ord yaa yan yab) yn zero, nf1 nfya => nf1 nfya
+          | ord zero xn zero, nf1 nf0,
+            ord (ord yaa yan yab) yn (ord yba ybn ybb), nf2 nfya nfyb yba<ya => nf2 nfya nfyb yba<ya
+
+          | ord (ord xaa xan xab) xn zero, nf1 nfxa,
+            ord zero yn zero, nf1 nf0 => nf2 nfxa (nf1 nf0) zero<_
+          | ord (ord xaa xan xab) xn zero, nf1 nfxa,
+            ord (ord yaa yan yab) yn zero, nf1 nfya => {?}
+          | ord (ord xaa xan xab) xn zero, nf1 nfxa,
+            ord (ord yaa yan yab) yn (ord yba ybn ybb), nf2 nfya nfyb yba<ya => {?}
+
+          | ord (ord xaa xan xab) xn (ord xba xbn xbb), nf2 nfxa nfxb xba<xa,
+            ord zero yn zero, nf1 nf0 => {?}
+          | ord (ord xaa xan xab) xn (ord xba xbn xbb), nf2 nfxa nfxb xba<xa,
+            ord (ord yaa yan yab) yn zero, nf1 nfya => {?}
+          | ord (ord xaa xan xab) xn (ord xba xbn xbb), nf2 nfxa nfxb xba<xa,
+            ord (ord yaa yan yab) yn (ord yba ybn ybb), nf2 nfya nfyb yba<ya => {?}-}
+
         }
       }
   }
