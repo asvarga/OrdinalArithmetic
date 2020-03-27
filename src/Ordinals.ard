@@ -116,12 +116,12 @@
             | GT => ord a1 n1 (b1 +' ord a2 n2 b2)
           }
 
-        \func nf+ {x : Ord'} (nfx : nf x) {y : Ord'} (nfy : nf y) : nf $ x +' y \elim x, nfx, y, nfy {
+        \func nf+ {x : Ord'} (nfx : nf x) {y : Ord'} (nfy : nf y) : nf $ x +' y \elim x, y {
 
-          | zero, nf0, zero, nf0 => nf0
-          | zero, nf0, ord ya yn yb, nfy => nfy
-          | ord xa xn xb, nfx, zero, nf0 => nfx
-          | ord xa xn xb, nfx, ord ya yn yb, nfy =>
+          | zero, zero => nf0
+          | zero, ord ya yn yb => nfy
+          | ord xa xn xb, zero => nfx
+          | ord xa xn xb, ord ya yn yb =>
             \let
               | S : Ordering -> Ord' => (\lam o => \case o \with {
                 | GT => ord xa xn (xb +' ord ya yn yb)
@@ -134,6 +134,8 @@
                 \let nfsum : nf $ ord ya yn yb => nfy
                 \in transport nf (pmap S r) nfsum
               | EQ, r =>
+                -- how do I get an (nf xa) without further pattern matching on (x, nfx)?
+                -- nfx will be constructed by nf1 or nf2 if xb==0 or xb!=0 respectively
                 \let nfsum : nf $ ord xa (xn p+ yn) (xb +' yb) => {?}
                 \in transport nf (pmap S r) nfsum
               | GT, r =>
@@ -142,7 +144,9 @@
             }
 
 
-          {-| zero, nf0, zero, nf0 => nf0
+          {- -- doing all cases at once is a mess
+
+          | zero, nf0, zero, nf0 => nf0
           | zero, nf0, ord ya yn yb, nfy => nfy
           | ord xa xn xb, nfx, zero, nf0 => nfx
 
@@ -187,9 +191,6 @@
 -- TODO: right subtraction (partial; need failure object)
 -- TODO: implement ploop
 -- TODO: encapsulate well-formedness into Ord without Ord'
-
-
-
 
 
 
