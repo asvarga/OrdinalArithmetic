@@ -1,0 +1,17 @@
+\import Data.Bool
+\import Order.StrictOrder
+\import util
+
+{-------------------}
+
+\record Below {A : StrictPoset} (bound : A) (val : A) (val<bound : val < bound)
+
+\func weaken {A : StrictPoset} {a b c : A} (ab : Below b a) (bc : Below c b) : Below c \cowith
+  | val => a
+  | val<bound => A.<-transitive a b c ab.val<bound bc.val<bound
+
+\data SList {A : StrictPoset} (bound : A)
+  | nil
+  | cons (a : Below bound) (SList a.val)
+
+\func single {A : StrictPoset} {bound : A} (b : Below bound) : SList bound => cons b nil
