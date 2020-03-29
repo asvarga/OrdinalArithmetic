@@ -15,7 +15,7 @@ Here are some failed attempts:
 - Successor function on `Ord`, with proof that it preserves nf
 - Addition on `Ord'`, but without proof that it preserves nf
 
-I've failed to prove that addition preserves cnf. Combining the 3 cases involved in addition with the 3 cases involved in `nf` of each of the 2 arguments has led to an explosion in cases that I can't reconcile. The real problem stems from the fact that once I've pattern `\elim`-ed on `(x, nfx)` as `(ord x a xn xb, nfx)`, I can't further refine `(xa, xb)` and update what I know about `nfx`.
+I've failed to prove that addition preserves cnf. Combining the 3 cases involved in addition with the 3 cases involved in `nf` of each of the 2 arguments has led to an explosion in cases that I can't reconcile. The real problem stems from the fact that once I've pattern `\elim`-ed on `(x, nfx)` as `(ord xa xn xb, nfx)`, I can't further refine `(xa, xb)` and update what I know about `nfx`.
 
 #### Ordinals2.ard
 
@@ -31,7 +31,7 @@ A simpler/similar example proving a proposition about the result of a function. 
 
 ## Questions
 
-One over-arching question I have is about when to use recursion vs induction. For example, instead of implementing addition as a function `\func + (x y : Ord) : Ord => ...`, would I have more luck implementing it as a datatype like: 
+One over-arching question I have is about when to use recursion vs induction. For example, instead of implementing addition as a function `\func + (x y : Ord) : Ord => ...`, would I have more luck axiomatizing it as a datatype like: 
 
 ```arend
 \data _+_=_ (x y z : Ord') \elim x, y, z
@@ -40,4 +40,4 @@ One over-arching question I have is about when to use recursion vs induction. Fo
   | ord xa xn xb, ord ya yn yb, ord za zn zb => ...
 ```
 
-
+and then proving it decidable?
