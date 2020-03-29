@@ -1,0 +1,248 @@
+\import Arith.Nat
+\import util
+\import Logic
+\import Order.LinearOrder
+\import Paths
+\import Prelude
+\open Nat
+
+{-------------------}
+
+-- Positive Nats
+
+\func Pos => \Sigma (p : Nat) (1 <= p)
+
+\func psuc (n : Nat) : Pos => (suc n, suc<=suc zero<=_)
+
+\func +1 => psuc 0
+
+\func \infixl 6 p+ (x y : Pos) : Pos =>
+  \let
+    | sum =>  x.1 + y.1
+  \in (sum, NatLE.<=-transitive 1 y.1 sum y.2 (<=_0_+-left {y.1} x.1))
+
+{-------------------}
+
+-- Not necessarily well-formed
+
+\data Ord'
+  | zero
+  | ord Ord' Pos Ord' -- ord a n b := ω^a * n + b
+  \where {
+    \data \infix 4 < (x y : Ord') \elim x, y
+      | zero, ord _ _ _ => zero<_
+      | ord xa _ _, ord ya _ _ => xa<ya (xa < ya)
+      | ord xa xn _, ord ya yn _ => xn<yn (xa = ya) (suc xn.1 <= yn.1)
+      | ord xa xn xb, ord ya yn yb => xb<yb (xa = ya) (xn = yn) (xb < yb)
+
+    \data \infix 4 !<< (x y : Ord') \elim y
+      | zero => _!<<zero
+      | ord ya _ _ => ya<x (ya < x)
+
+    \func size' (_ : Ord') : Nat
+      | zero => 0
+      | ord a n b => size' a + n.1 + size' b
+
+    \use \coerce n2o' (_ : Nat) : Ord'
+      | 0 => zero
+      | suc n => ord zero (psuc n) zero
+
+    \lemma _!<zero {x : Ord'} (p : x < zero) : Empty \elim x, p
+
+    \func geta (_ : Ord') : Ord'
+      | zero => zero
+      | ord a n b => a
+  }
+
+\open Ord'
+
+{-------------------}
+
+-- Ordinals in Cantor Normal Form
+
+\record Ord
+  | val : Ord'
+  | nfval : nf val
+  \where {
+    \data nf Ord' \with
+      | zero => nf0
+      | ord a n b => nf2 (nf a) (nf b) (a !<< b)
+
+    \func size (x : Ord) : Nat => size' x.val
+
+    \use \coerce n2o (n : Nat) : Ord \with
+      | 0 => \new Ord 0 nf0
+      | suc n => \new Ord (suc n) (nf2 nf0 nf0 _!<<zero)
+
+    \func one : Ord => 1
+
+    \func w : Ord \cowith
+      | val => ord 1 +1 0
+      | nfval => nf2 one.nfval nf0 _!<<zero   -- nf1 one.nfval
+
+    \func osuc (x : Ord) : Ord \cowith
+      | val => osuc' x.val
+      | nfval => nfosuc x.nfval
+      \where {
+        \func osuc' (_ : Ord') : Ord' \with
+          | zero => 1
+          | ord zero n b => ord zero (psuc n.1) zero  -- n2o' $ suc n.1
+          | ord a n b => ord a n $ osuc' b
+
+{-
+        \func x!<<osuc'y {x y : Ord'} (x!<<y : x !<< y) : (x !<< osuc' y)
+          | {zero}, {zero}, _!<<zero => {?}
+          | {zero}, {ord o p o1}, ya<x < => {?}
+          | {ord o p o1}, {zero}, _!<<zero => {?}
+          | {ord o p o1}, {ord o2 p1 o3}, ya<x < => {?}
+-}
+
+        {-\func suc_anb=amc {xa : Ord'} {xn : Pos} {xb : Ord'}
+                          {ya : Ord'} {yn : Pos} {yb : Ord'}
+                          (p : osuc' (ord xa xn xb) = (ord ya yn yb)) : xa = ya-}
+
+{-
+        \func geta_x=geta_suc_x (x : Ord') : geta x = geta (osuc' x)
+          | zero => idp
+          | ord zero _ _ => idp
+          | ord (ord _ _ _) _ _ => idp
+-}
+
+        \func zero!=suc {x : Ord'} (p : zero = osuc' x) : Empty \elim x
+          | zero => transport T p unit
+          | ord zero _ _ => transport T p unit
+          | ord (ord _ _ _) _ _ => transport T p unit
+        \where
+          \func T (x : Ord') : \Type
+            | zero => Unit
+            | ord _ _ _ => Empty
+
+        \func nfosuc {x : Ord'} (p : nf x) : nf $ osuc' x \elim x, p
+          | zero, nf0 => one.nfval
+          | ord zero n b, nf2 nf0 nfb zero!<<b => nf2 nf0 nf0 _!<<zero
+          | ord (ord _ _ _) n zero, nf2 nfa nf0 _!<<zero =>
+            nf2 nfa one.nfval (ya<x zero<_)
+          | ord (ord _ _ _) n (ord zero _ _), nf2 nfa nfb _ =>
+            nf2 nfa (nf2 nf0 nf0 _!<<zero) (ya<x zero<_)
+          | ord (ord _ _ _) n (ord (ord _ _ _) _ _), nf2 nfa nfb (ya<x foo) =>
+            nf2 nfa (nfosuc nfb) (ya<x foo)
+
+
+          {-| ord (ord aa an ab) n b, nf2 nfa nfb a!<<b =>
+            \case b \as b', idp : b' = b \with {
+              | zero, p =>
+                nf2 nfa (nfosuc nfb) $ transport (ord aa an ab !<<) (pmap osuc' p) $ ya<x zero<_
+              | ord zero bn bb, p =>
+                nf2 nfa (nfosuc nfb) $ transport (ord aa an ab !<<) (pmap osuc' p) $ ya<x zero<_
+              | ord (ord baa ban bab) bn bb, p =>
+                nf2 nfa (nfosuc nfb) $ transport (ord aa an ab !<<) (pmap osuc' p) $ ya<x {?}
+            }-}
+
+          {-| ord (ord aa an ab) n b, nf2 (nf2 nfaa nfab aa!<<ab) nfb a!<<b =>
+            \case osuc' b \as c, idp : c = osuc' b \with {
+              | zero, p => absurd $ zero!=suc p
+              | ord ca cn cb, p =>
+                \let
+--                  | aa=ca : aa = ca => {?} -- geta_x=geta_suc_x b -- *> {?}
+                  | a!<<sucb : ord aa an ab !<< osuc' b => {?}
+                \in nf2 (nf2 nfaa nfab aa!<<ab) (nfosuc nfb) a!<<sucb
+            }-}
+
+
+
+--          | ord (ord aa an ab) n (ord ba bn bb),
+--            nf2 (nf2 nfaa nfab aa!<<ab) (nf2 nfba nfbb ba!<<bb) (ya<x ba<a) =>
+--            nf2 (nf2 nfaa nfab aa!<<ab) (nfosuc (nf2 nfba nfbb ba!<<bb)) {?}
+
+
+        --          | ord (ord aa an ab) n b, nf2 (nf2 nfaa nfab aa!<<ab) nfb a!<<b =>
+--            nf2 (nf2 nfaa nfab aa!<<ab) (nfosuc nfb) {?}    -- (x!<<osuc'y a!<<b)
+
+        --          | ord a n b, nf2 nfa nfb a!<<b => {?}
+
+        --          | zero, _ => nf1 nf0
+--          | ord zero _ zero, _ => nf1 nf0
+--          | ord zero _ (ord _ _ _), nf2 _ _ a<zero => absurd $ _!<zero a<zero
+--          | ord (ord _ _ _) _ zero, nf1 nfa => nf2 nfa (nf1 nf0) zero<_
+--          | ord (ord _ _ _) _ (ord zero _ _), nf2 nfa _ _ => nf2 nfa (nf1 nf0) zero<_
+--          | ord (ord _ _ _) _ (ord (ord _ _ _) _ _), nf2 nfa nfb ba<a => nf2 nfa (nfosuc nfb) ba<a
+      }
+--
+--    \func \infix 4 comp (_ _ : Ord') : Ordering \with
+--      | zero, zero => EQ
+--      | zero, _ => LT
+--      | _, zero => GT
+--      | ord a1 n1 b1, ord a2 n2 b2 => \case a1 comp a2 \with {
+--        | EQ => \case n1.1 compn n2.1 \with {
+--          | EQ => b1 comp b2
+--          | _T => _T
+--        }
+--        | _T => _T
+--      }
+--
+--    \func \infixl 6 + (x y : Ord) : Ord \cowith
+--      | val => x.val +' y.val
+--      | nfval => nf+ x.nfval y.nfval
+--      \where {
+--        \func \infixl 6 +' (_ _ : Ord') : Ord' \with
+--          | zero, y => y
+--          | x, zero => x
+--          | ord a1 n1 b1, ord a2 n2 b2 => \case a1 comp a2 \with {
+--            | LT => ord a2 n2 b2
+--            | EQ => ord a1 (n1 p+ n2) (b1 +' b2)
+--            | GT => ord a1 n1 (b1 +' ord a2 n2 b2)
+--          }
+--
+--        \func nf+ {x : Ord'} (nfx : nf x) {y : Ord'} (nfy : nf y) : nf $ x +' y \elim x, y {
+--          | zero, zero => nf0
+--          | zero, ord ya yn yb => nfy
+--          | ord xa xn xb, zero => nfx
+--          | ord xa xn xb, ord ya yn yb =>
+--            \let
+--              | S : Ordering -> Ord' => (\lam o => \case o \with {
+--                | GT => ord xa xn (xb +' ord ya yn yb)
+--                | LT => ord ya yn yb
+--                | EQ => ord xa (xn p+ yn) (xb +' yb)
+--              })
+--              | sum : Ord' => S $ xa comp ya
+--            \in \case xa comp ya \as ordering, idp : ordering = xa comp ya \with {
+--              | LT, r =>
+--                \let nfsum : nf $ ord ya yn yb => nfy
+--                \in transport nf (pmap S r) nfsum
+--              | EQ, r =>
+--                -- how do I get an (nf xa) without further pattern matching on (x, nfx)?
+--                -- nfx will be constructed by nf1 or nf2 if xb==0 or xb!=0 respectively
+--                \let nfsum : nf $ ord xa (xn p+ yn) (xb +' yb) => {?}
+--                \in transport nf (pmap S r) nfsum
+--              | GT, r =>
+--                \let nfsum : nf $ ord xa xn (xb +' ord ya yn yb) => {?}
+--                \in transport nf (pmap S r) nfsum
+--            }
+--        }
+
+
+
+      }
+
+
+
+\open Ord
+
+{-------------------}
+
+-- TODO: decide nf: see Set.ard
+-- TODO: decide equality
+-- TODO: specify ploop (partial loop) typeclass
+-- TODO: +
+-- TODO: implement monoid (prove associativity)
+-- TODO: left subtraction (total)
+-- TODO: right subtraction (partial; need failure object)
+-- TODO: implement ploop
+-- TODO: encapsulate well-formedness into Ord without Ord'
+
+
+
+
+
+
+

@@ -29,11 +29,11 @@
   | zero
   | ord Ord' Pos Ord' -- ord a n b := ω^a * n + b
   \where {
-    \data \infix 4 < Ord' Ord' \with
+    \data \infix 4 < (x y : Ord') \elim x, y
       | zero, ord _ _ _ => zero<_
-      | ord a1 _ _, ord a2 _ _ => a1<a2 (a1 < a2)
-      | ord a1 n1 _, ord a2 n2 _ => n1<n2 (a1 = a2) (suc n1.1 <= n2.1)
-      | ord a1 n1 b1, ord a2 n2 b2 => b1<b2 (a1 = a2) (n1 = n2) (b1 < b2)
+      | ord xa _ _, ord ya _ _ => xa<ya (xa < ya)
+      | ord xa xn _, ord ya yn _ => xn<yn (xa = ya) (suc xn.1 <= yn.1)
+      | ord xa xn xb, ord ya yn yb => xb<yb (xa = ya) (xn = yn) (xb < yb)
 
     \func size' (_ : Ord') : Nat \with
       | zero => 0
@@ -179,19 +179,6 @@
   }
 
 \open Ord
-
-{-------------------}
-
--- TODO: decide nf: see Set.ard
--- TODO: decide equality
--- TODO: specify ploop (partial loop) typeclass
--- TODO: +
--- TODO: implement monoid (prove associativity)
--- TODO: left subtraction (total)
--- TODO: right subtraction (partial; need failure object)
--- TODO: implement ploop
--- TODO: encapsulate well-formedness into Ord without Ord'
-
 
 
 

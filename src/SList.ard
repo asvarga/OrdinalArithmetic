@@ -4,14 +4,41 @@
 
 {-------------------}
 
-\record Below {A : StrictPoset} (bound : A) (val : A) (val<bound : val < bound)
+\record Below {A : StrictPoset}
+  | bound : A
+  | val : A
+  | val<bound : val < bound
 
 \func weaken {A : StrictPoset} {a b c : A} (ab : Below b a) (bc : Below c b) : Below c \cowith
   | val => a
   | val<bound => A.<-transitive a b c ab.val<bound bc.val<bound
+
+{-------------------}
 
 \data SList {A : StrictPoset} (bound : A)
   | nil
   | cons (a : Below bound) (SList a.val)
 
 \func single {A : StrictPoset} {bound : A} (b : Below bound) : SList bound => cons b nil
+
+{-------------------}
+
+--\func Ord (bound : Ord) : \Type => SList bound
+
+{-
+
+Can't implement Ords as SLists because the bound is itself an Ord
+
+*** May have to use Ord' and then isSorted
+
+OR: avoid giving SLists a bound like below?
+
+-}
+
+--\data SList {A : StrictPoset}
+--  | nil
+--  | cons (a : A) (as : SList {A}) (head a as < a)
+--
+--\func head {A : StrictPoset} (def : A) (slist : SList {A}) : SList {A}
+--  | def, nil => def
+--  | def, cons a _ _ => a

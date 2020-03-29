@@ -1,0 +1,44 @@
+\import Arith.Nat
+\import util
+\import Logic
+\import Order.LinearOrder
+\import Paths
+\import Prelude
+\open Nat
+
+{-------------------}
+
+-- Positive Nats
+
+\func Pos => \Sigma (p : Nat) (1 <= p)
+
+\func psuc (n : Nat) : Pos => (suc n, suc<=suc zero<=_)
+
+\func +1 => psuc 0
+
+\func \infixl 6 p+ (x y : Pos) : Pos =>
+  \let
+    | sum =>  x.1 + y.1
+  \in (sum, NatLE.<=-transitive 1 y.1 sum y.2 (<=_0_+-left {y.1} x.1))
+
+{-------------------}
+
+
+-- ord a n b := ω^a * n + b
+
+\data Ord
+  | zero
+  | ord (a : Ord) (n : Pos) (b : Ord) (a!<<b : a !<< b)
+  \where {
+    \data \infix 4 !<< (x y : Ord) \elim y
+      | zero => _!<<zero
+      | ord ya _ _ _ => ya<x (ya < x)
+
+    \data \infix 4 < (x y : Ord) \with
+      | zero, ord _ _ _ _ => zero<_
+      | ord xa _ _ _, ord ya _ _ _ => xa<ya (xa < ya)
+      | ord xa xn _ _, ord ya yn _ _ => xn<yn (xa = ya) (suc xn.1 <= yn.1)
+      | ord xa xn xb _, ord ya yn yb _ => xb<yb (xa = ya) (xn = yn) (xb < yb)
+  }
+
+
