@@ -4,6 +4,16 @@ An Arend implementation of ordinal arithmetic.
 
 Ported from a Liquid Haskell implementation here: https://github.com/asvarga/ordinal-arithmetic
 
+## TODO
+
+- implement ordinals as both `ω^a * n + b` and `ω^a + b`
+- implement operations on both
+- prove properties about the second
+    - this will probably be simpler and use `<=` instead of `<`
+- prove equivalence between them and transport across
+
+See: https://www.youtube.com/watch?v=Rt2OrG3IHkU
+
 ## Files
 
 Here are some failed attempts:
@@ -29,6 +39,8 @@ Tried another representation of `nf` with only 2 constructors, but it still lead
 
 A simpler/similar example proving a proposition about the result of a function. Had to use this trick: https://arend-lang.github.io/documentation/tutorial/PartI/case#elim-in-case
 
+
+<!--
 ## Questions
 
 One over-arching question I have is about when to use recursion vs induction. For example, instead of implementing addition as a function `\func + (x y : Ord) : Ord => ...`, would I have more luck axiomatizing it as a datatype like: 
@@ -41,3 +53,5 @@ One over-arching question I have is about when to use recursion vs induction. Fo
 ```
 
 and then proving it decidable?
+-->
+
